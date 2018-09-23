@@ -1,0 +1,28 @@
+
+{
+  "$schema": "http://json-schema.org/schema#",
+  "self": {
+    "vendor": "morganmckinley",
+    "name": "jobs/list/response",
+    "format": "jsonschema",
+    "version": "1-0-0"
+  },
+  "type": "array",
+  "body": {
+    "type": "object",
+    "properties": {
+      "job_id": { "type": "number" },
+      "job_title": { "type": "string" },
+      "job_description": { "type": "string" },
+      "job_preference": { "type": "number" },
+      "published": { "type": "number" },
+      "created_dt": { "type": "string" },
+      "modified_dt": { "type": "string" }
+    },
+    "required": [
+      "job_id"
+    ],
+    "additionalProperties": false
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,35 @@
+
+{
+  "$schema": "http://json-schema.org/schema#",
+  "self": {
+    "vendor": "morganmckinley",
+    "name": "jobs/list/request",
+    "format": "jsonschema",
+    "version": "1-0-0"
+  },
+  "type": "object",
+  "properties": {
+    "path": { "type": "string", "pattern": "^/jobs/list$" },
+    "httpMethod": { "type": "string", "pattern": "^GET$" },
+    "queryStringParameters": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "per_page": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "userId"
+      ]
+    }
+  },
+  "required": [
+    "path",
+    "httpMethod",
+    "queryStringParameters"
+  ],
+  "additionalProperties": true
+}

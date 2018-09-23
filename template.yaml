@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Morgan McKinley Learning - JSON Schema
+
+Resources:
+
+  CandidateProfileApi:
+    Type: AWS::Serverless::Api
+    Properties:
+        StageName: demo
+        DefinitionBody:
+            swagger: "2.0"
+            info:
+              version: "1.0"
+              title: learn-api
+            basePath: "/demo"
+            schemes:
+            - "https"
+            paths:
+              /learn/list:
+                get:
+                  consumes:
+                  - "application/json"
+                  produces:
+                  - "application/json"
+                  responses:
+                    "200":
+                      description: "200 response"
+                      schema:
+                        $ref: "#/definitions/Empty"
+                      headers:
+                        Access-Control-Allow-Origin:
+                          type: "string"
+                    "400":
+                      description: Bad request
+                      headers:
+                        Access-Control-Allow-Origin:
+                          type: "string"
+                      schema:
+                        $ref: '#/definitions/Empty'
+                    "500":
+                      description: Internal error
+                      headers:
+                        Access-Control-Allow-Origin:
+                          type: "string"
+                      schema:
+                        $ref: '#/definitions/Empty'
+                  x-amazon-apigateway-integration:
+                    responses:
+                      default:
+                        statusCode: "200"
+                        responseParameters:
+                          method.response.header.Access-Control-Allow-Origin: "'*'"
+                      "BAD.*":
+                        statusCode: "400"
+                        responseParameters:
+                          method.response.header.Access-Control-Allow-Origin : "'*'"
+                      "ERROR.*":
+                        statusCode: "500"
+                        responseParameters:
+                          method.response.header.Access-Control-Allow-Origin : "'*'"
+                    type: aws_proxy
+                    uri:
+                      Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LearnJsonSchema.Arn}/invocations
+                    httpMethod: "POST"
+
+  LearnJsonSchemaLambdaRole: 
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      RoleName: 'learn-lambda'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: LearnLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action:
+                - "logs:*"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/learn-jobs-list"
+              - Effect: "Allow"
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:learn-jobs-list"
+
+  JobsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: learn-jobs-list
+      Tags: 
+        Product: learn
+      Handler: src/jobs.list
+      Runtime: nodejs6.10
+      CodeUri: ./
+      Timeout: 3
+      MemorySize: 128
+      Role: !GetAtt LearnJsonSchemaLambdaRole.Arn
+
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Join
+        - 'learn-jobs-table'
+      AttributeDefinitions: 
+        - 
+          AttributeName: "event_id"
+          AttributeType: "S"
+        - 
+          AttributeName: "event"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "id"
+          KeyType: "HASH"
+        - 
+          AttributeName: "event"
+          KeyType: "RANGE"
+      StreamSpecification:
+        StreamViewType: "NEW_IMAGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
